@@ -5,7 +5,7 @@ const routes = require('./routes/routes.js');
 const app = express();  
 
 const corsOptions = {
-    origin: 'http://localhost:5173',  
+    origin: 'https://barber-project-one.vercel.app',  
     credentials: true
 };
 
