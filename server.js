@@ -5,7 +5,7 @@ const routes = require('./routes/routes.js');
 const app = express();  
 
 const corsOptions = {
-    origin: ['https:http://localhost:5173'],  
+    origin: 'http://localhost:5173',  
     credentials: true
 };
 
