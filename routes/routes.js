@@ -133,17 +133,86 @@ routes.post('/horarios-criar', async(req,res) => {
       [date,hora]
     )
 
-    return res.status(200).json({ mensagem: 'Horario criado com sucesso!' });
+    return res.status(200).json({mensagem: 'Horario criado com sucesso!' });
   }catch(error){
     console.error(error)
     return res.status(500).json({messagem: 'Erro interno no servidor'})
   }
 })
 
-//Agenda
+routes.delete('/horarios-deletar', async(req,res) => {
+  const {id} = req.body
 
-routes.get('/agenda', async(req,res) => {
-  
+  if(!id || typeof id !== 'number' || !Number.isInteger(id)){
+    return res.status(400).json({error:'Id não preenchido ou não é um número'})
+  }
+
+  try{
+    const result = await db.query(
+      'SELECT * FROM horarios WHERE id = $1',
+      [id]
+    )
+
+    if(result.rows.length == 0){
+      return res.status(409).json({error:'Id não encontrado no banco de dados'})
+    }
+
+    await db.query(
+      'DELETE FROM horarios WHERE id = $1',
+      [id]
+    )
+    return res.status(200).json({messagem:'Horario deletado com sucesso'})
+  }catch(error){
+    console.error(error)
+    return res.status(500).json({error:'Erro interno no servidor'})
+  }
 })
+
+routes.put('/horarios-editar', async(req,res) => {
+  const {id, date,hora} = req.body
+
+  if(!id || !date || !hora){
+    return res.status(400).json({error:'Campos não preenchidos'})
+  }
+
+  try{
+    const result = await db.query(
+      'SELECT * FROM horarios WHERE id = $1',
+      [id]
+    )
+
+    if(result.rows.length == 0){
+      return res.status(409).json({error: 'Horário não registrado no banco de dados'})
+    }
+
+    await db.query(
+      'UPDATE horarios SET data = $1, hora = $2 WHERE id = $3',
+      [date,hora,id]
+    )
+
+    return res.status(200).json({messagem:'Horário editado com sucesso!'})
+
+  }catch(error){
+    console.log(error)
+    return res.status(500).json({error:'Erro interno no servidor'})
+  }
+})
+
+//Agenda
+routes.get('/agenda', async(req,res) => {
+  try {
+  const result = await db.query(
+    'SELECT * FROM horarios order by data'
+  );
+
+  const horarios = result.rows
+
+  return res.json(horarios)
+} catch (error) {
+  console.error('Erro capturado no catch:', error);
+  return res.status(500).json({ error: 'Erro interno no servidor' });
+}
+});
+
 
 module.exports = routes

@@ -4,6 +4,8 @@ const routes = require('./routes/routes.js');
 
 const app = express();  
 
+require('dotenv').config()
+
 const corsOptions = {
     origin: process.env.CLIENTE_URL,  
     credentials: true
