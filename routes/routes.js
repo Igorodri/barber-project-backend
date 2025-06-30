@@ -80,4 +80,39 @@ routes.post('/cadastro', async (req, res) => {
   }
 });
 
-module.exports = routes;
+
+//Horarios
+
+routes.get('/horarios', async(req,res) => {
+  const {data} = req.query
+
+  if(!data){
+    return res.status(400).json({error: 'Data não selecionada'})
+  }
+
+try {
+  console.log('Data recebida:', data);
+
+  const result = await db.query(
+    'SELECT * FROM horarios WHERE data = $1 ORDER BY hora',
+    [data]
+  );
+
+  console.log('Resultado da consulta:', result.rows);
+
+  const horarios = result.rows.map(row => ({
+    id: row.id,
+    dia: row.data.toLocaleDateString('pt-BR'),      
+    hora: row.hora.slice(0, 5), 
+  }));
+
+  console.log('Horários formatados:', horarios);
+
+  return res.json(horarios);
+} catch (error) {
+  console.error('Erro capturado no catch:', error);
+  return res.status(500).json({ error: 'Erro interno no servidor' });
+}
+});
+
+module.exports = routes
