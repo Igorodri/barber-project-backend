@@ -91,14 +91,10 @@ routes.get('/horarios', async(req,res) => {
   }
 
 try {
-  console.log('Data recebida:', data);
-
   const result = await db.query(
-    'SELECT * FROM horarios WHERE data = $1 ORDER BY hora',
+    'SELECT * FROM horarios WHERE data = $1 and disponivel = TRUE ORDER BY hora',
     [data]
   );
-
-  console.log('Resultado da consulta:', result.rows);
 
   const horarios = result.rows.map(row => ({
     id: row.id,
@@ -106,13 +102,48 @@ try {
     hora: row.hora.slice(0, 5), 
   }));
 
-  console.log('Horários formatados:', horarios);
-
   return res.json(horarios);
 } catch (error) {
   console.error('Erro capturado no catch:', error);
   return res.status(500).json({ error: 'Erro interno no servidor' });
 }
 });
+
+
+routes.post('/horarios-criar', async(req,res) => {
+  const {date, hora} = req.body
+
+  if(!date || !hora){
+    return res.status(400).json({error:'Preencha os campos para prosseguir'})
+  }
+
+  try{
+
+    const result = await db.query(
+      'SELECT * FROM horarios WHERE data = $1 AND hora = $2',
+      [date,hora]
+    )
+
+    if(result.rows.length > 0){
+      return res.status(409).json({error:'Já existe um registro com essa mesma data e hora'})
+    }
+
+    await db.query(
+      'INSERT INTO horarios(data,hora) VALUES ($1,$2)',
+      [date,hora]
+    )
+
+    return res.status(200).json({ mensagem: 'Horario criado com sucesso!' });
+  }catch(error){
+    console.error(error)
+    return res.status(500).json({messagem: 'Erro interno no servidor'})
+  }
+})
+
+//Agenda
+
+routes.get('/agenda', async(req,res) => {
+  
+})
 
 module.exports = routes
