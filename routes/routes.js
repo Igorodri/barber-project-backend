@@ -202,7 +202,7 @@ routes.put('/horarios-editar', async(req,res) => {
 routes.get('/agenda', async(req,res) => {
   try {
   const result = await db.query(
-    'SELECT * FROM horarios order by data'
+    'SELECT * FROM horarios ORDER BY data DESC'
   );
 
   const horarios = result.rows
