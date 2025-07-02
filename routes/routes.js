@@ -208,7 +208,11 @@ routes.get('/agenda', async(req,res) => {
       const offset = (page - 1) * limit
 
       const result = await db.query(
-        'SELECT * FROM horarios WHERE disponivel = false ORDER BY data DESC LIMIT $1 OFFSET $2',
+        `SELECT h.*,u.username AS username FROM horarios h
+        JOIN users u ON h.id_usuario = u.id_user
+        WHERE h.disponivel = false 
+        ORDER BY h.data
+        DESC LIMIT $1 OFFSET $2`,
         [limit, offset]
       );
 
