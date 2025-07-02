@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const db = require('../database.js');
+const autenticarToken = require('../authtoken.js')
 require("dotenv").config();
 
 const routes = express();
@@ -8,8 +9,7 @@ const routes = express();
 function generateToken(user) {
   const token = jwt.sign(
     { id: user.id_user, username: user.username, adm: user.adm },
-    process.env.SECRET_KEY,
-    { expiresIn: '1h' }
+    process.env.SECRET_KEY
   );
   return token;
 }
@@ -201,18 +201,141 @@ routes.put('/horarios-editar', async(req,res) => {
 //Agenda
 routes.get('/agenda', async(req,res) => {
   try {
-  const result = await db.query(
-    'SELECT * FROM horarios ORDER BY data DESC'
-  );
+    const page =req.query.page? parseInt(req.query.page) : null
+    const limit = req.query.limit ? parseInt(req.query.limit) : null
 
-  const horarios = result.rows
+    if(page && limit){
+      const offset = (page - 1) * limit
 
-  return res.json(horarios)
+      const result = await db.query(
+        'SELECT * FROM horarios WHERE disponivel = false ORDER BY data DESC LIMIT $1 OFFSET $2',
+        [limit, offset]
+      );
+
+      const totalQuery = await db.query('SELECT COUNT(*) FROM horarios');
+      const totalItems = Number(totalQuery.rows[0].count);
+      const totalPages = Math.ceil(totalItems / limit);
+
+      return res.json({
+      dia: result.rows,
+      totalItems,
+      totalPages,
+      currentPage: Number(page)
+    });
+    }else{
+      const result = await db.query('SELECT * FROM horarios ORDER BY data DESC')
+      return res.json(result.rows)
+    }
 } catch (error) {
   console.error('Erro capturado no catch:', error);
   return res.status(500).json({ error: 'Erro interno no servidor' });
 }
 });
+
+//Meus Horários
+routes.get('/meus-horarios', autenticarToken, async (req, res) => {
+  const id = req.user.id;
+  try {
+    const page = req.query.page ? parseInt(req.query.page) : null;
+    const limit = req.query.limit ? parseInt(req.query.limit) : null;
+
+    if (page && limit) {
+      const offset = (page - 1) * limit;
+
+      const result = await db.query(
+        'SELECT * FROM horarios WHERE id_usuario = $1 ORDER BY data DESC LIMIT $2 OFFSET $3',
+        [id, limit, offset]
+      );
+
+      const totalQuery = await db.query(
+        'SELECT COUNT(*) FROM horarios WHERE id_usuario = $1',
+        [id]
+      );
+      const totalItems = Number(totalQuery.rows[0].count);
+      const totalPages = Math.ceil(totalItems / limit);
+
+      return res.json({
+        dia: result.rows,
+        totalItems,
+        totalPages,
+        currentPage: Number(page),
+      });
+    } else {
+      const result = await db.query(
+        'SELECT * FROM horarios WHERE id_usuario = $1 ORDER BY data DESC',
+        [id]
+      );
+      return res.json(result.rows);
+    }
+  } catch (error) {
+    console.error('Erro capturado no catch:', error);
+    return res.status(500).json({ error: 'Erro interno no servidor' });
+  }
+});
+
+//Marcar Horário
+routes.put('/marcar-horario', autenticarToken, async (req, res) => {
+  const{id_horario,id_user} = req.body
+
+  if(!id_horario || !id_user){
+    return res.status(400).json({error:'Não foi possível realizar a marcação'})
+  }
+
+  try{
+    const result = await db.query(
+      'SELECT * FROM horarios WHERE id = $1 AND disponivel = true',
+      [id_horario]
+    )
+
+    if(result.rows.length === 0){
+      return res.status(409).json({error: 'Não foi possível encontrar o horário'})
+    }
+
+    await db.query(
+      'UPDATE horarios SET disponivel = false, id_usuario = $1 WHERE id = $2',
+      [id_user,id_horario]
+    )
+
+    return res.status(200).json({messagem:'Horário marcado com sucesso!'})
+
+  }catch(error){
+    console.error(error)
+    return res.status(500).json({error:'Erro interno no servidor'})
+  }
+})
+
+
+//Cancelar Horário
+routes.put('/cancelar-horario', async (req,res) => {
+    const{id_horario} = req.body
+
+    if(!id_horario){
+      return res.status(400).json({error:'Não foi possível cancelar a marcação'})
+    }
+
+    try{
+      const result = await db.query(
+        'SELECT * FROM horarios WHERE id = $1 AND disponivel = false',
+        [id_horario]
+      )
+
+      if(result.rows.length === 0){
+        return res.status(409).json({error: 'Não foi possível encontrar o horário'})
+      }
+
+      await db.query(
+        'UPDATE horarios SET disponivel = true, id_usuario = null WHERE id = $1',
+        [id_horario]
+      )
+
+      return res.status(200).json({messagem:'Horário cancelado com sucesso!'})
+
+    }catch(error){
+      console.error(error)
+      return res.status(500).json({error:'Erro interno no servidor'})
+    }
+})
+
 
 
 module.exports = routes
