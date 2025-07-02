@@ -38,3 +38,17 @@ CREATE TABLE users (
   password_user VARCHAR(50),
   adm INTEGER NOT NULL DEFAULT 0
 );
+```
+
+### 🔹 Tabela `horarios`
+
+```sql
+CREATE TABLE horarios (
+  id SERIAL PRIMARY KEY,
+  data DATE NOT NULL,
+  hora TIME NOT NULL,
+  disponivel BOOLEAN DEFAULT TRUE,
+  id_usuario INTEGER,
+  FOREIGN KEY (id_usuario) REFERENCES users(id_user)
+);
+```
