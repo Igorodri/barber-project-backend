@@ -6,6 +6,7 @@ require("dotenv").config();
 
 const routes = express();
 
+//Gerar token de acesso
 function generateToken(user) {
   const token = jwt.sign(
     { id: user.id_user, username: user.username, adm: user.adm },
@@ -13,6 +14,7 @@ function generateToken(user) {
   );
   return token;
 }
+
 
 // Login
 routes.post('/login', async (req, res) => {
@@ -45,6 +47,8 @@ routes.post('/login', async (req, res) => {
     return res.status(500).json({ error: 'Erro interno no servidor' });
   }
 });
+
+
 
 // Cadastro
 routes.post('/cadastro', async (req, res) => {
@@ -81,8 +85,8 @@ routes.post('/cadastro', async (req, res) => {
 });
 
 
-//Horarios
 
+//Horarios
 routes.get('/horarios', async(req,res) => {
   const {data} = req.query
 
@@ -110,6 +114,8 @@ try {
 });
 
 
+
+//Criar horários
 routes.post('/horarios-criar', async(req,res) => {
   const {date, hora} = req.body
 
@@ -140,6 +146,9 @@ routes.post('/horarios-criar', async(req,res) => {
   }
 })
 
+
+
+//Deletar horários
 routes.delete('/horarios-deletar', async(req,res) => {
   const {id} = req.body
 
@@ -168,6 +177,9 @@ routes.delete('/horarios-deletar', async(req,res) => {
   }
 })
 
+
+
+//Editar horários
 routes.put('/horarios-editar', async(req,res) => {
   const {id, date,hora} = req.body
 
@@ -197,6 +209,8 @@ routes.put('/horarios-editar', async(req,res) => {
     return res.status(500).json({error:'Erro interno no servidor'})
   }
 })
+
+
 
 //Agenda
 routes.get('/agenda', async(req,res) => {
@@ -236,7 +250,9 @@ routes.get('/agenda', async(req,res) => {
 }
 });
 
-//Meus Horários
+
+
+//Meus Horários - Cliente
 routes.get('/meus-horarios', autenticarToken, async (req, res) => {
   const id = req.user.id;
   try {
@@ -277,6 +293,8 @@ routes.get('/meus-horarios', autenticarToken, async (req, res) => {
   }
 });
 
+
+
 //Marcar Horário
 routes.put('/marcar-horario', autenticarToken, async (req, res) => {
   const{id_horario,id_user} = req.body
@@ -307,6 +325,7 @@ routes.put('/marcar-horario', autenticarToken, async (req, res) => {
     return res.status(500).json({error:'Erro interno no servidor'})
   }
 })
+
 
 
 //Cancelar Horário
